@@ -1,0 +1,298 @@
+{
+	"rules": {
+			
+		"users": {
+							
+	 	 	"$uid": {
+				
+				".read": "$uid === auth.uid",
+				
+				/* user settings */
+				"name": {
+					".read": true,
+					".write": "$uid === auth.uid",
+					".validate": "newData.isString()"
+				},
+				"country": {
+					".read": true,
+					".write": "$uid === auth.uid",
+					".validate": "newData.isString()"
+				},
+				 "bio": {
+					".read": true,
+					".write": "$uid === auth.uid",
+					".validate": "newData.isString()"
+				},
+				"url": {
+					".read": true,
+					".write": "$uid === auth.uid",
+					".validate": "newData.isString()"
+				},
+				"image": {
+					".read": true,
+					".write": "$uid === auth.uid",
+					".validate": "newData.isString()"
+				},
+				"banner": {
+					".read": true,
+					".write": "$uid === auth.uid",
+					".validate": "newData.isString()"
+				},
+					
+				/* locked personal info */
+				"referralCount": {
+					".read": "$uid === auth.uid",
+					".write": false
+				},
+				"roz": {
+					".read": "$uid === auth.uid",
+					".write": false
+				},
+					
+				/* locked public info */
+				"reviewCount": {
+					".read": true,
+					".write": false
+				},
+				"reviewsSentCount": {
+					".read": true,
+					".write": false
+				},
+				"averageRating": {
+					".read": true,
+					".write": false
+				},
+				"repliesSentCount": {
+					".read": true,
+					".write": false
+				},
+				"replyCount": {
+					".read": true,
+					".write": false
+				},
+				"followingCount": {
+					".read": true,
+					".write": false
+				},
+				"followerCount": {
+					".read": true,
+					".write": false
+				},
+				"ethAddress": {
+					".read": true,
+					".write": false
+				},
+					
+				/* locked after account creation */
+				"username": {
+					".read": true,
+					".write": "$uid === auth.uid && !data.exists()",
+					".validate": "newData.isString() && newData.val().length >= 3 && !newData.val().contains('.') && !newData.val().contains('$') && !newData.val().contains('[') && !newData.val().contains(']') && !newData.val().contains('#') && !newData.val().contains('/')"
+				},
+				
+			}	
+		},
+			
+		/* this is where the writing is done on the RTDB */
+		"repliesSent": {
+			".read": true,
+
+			"$username": {
+				".indexOn": "timestamp",
+
+				"$replyUid": {
+					 ".write": "root.child('users').child(auth.uid).child('username').val() === $username && ( !data.exists() || data.child('timestamp').val() + 1000*60*60 > now )",
+					".validate": "newData.hasChildren(['content', 'rating', 'sender', 'permalink', 'timestamp'])",
+
+					"content": {
+						".validate": "newData.isString() && newData.val().length >= 3"
+					},
+					"image": {
+						".validate": "newData.isString()"
+					},
+					"video": {
+						".validate": "newData.isString()"
+					},
+					"rating": {
+						".validate": "newData.val() <= 1 && newData.val() >= -1"
+					},
+					"sender": {
+						".validate": "newData.val() === $username"
+					},
+					"permalink": {
+						".validate": "(!data.exists() || newData.val() === data.val()) && newData.isString() && newData.val().endsWith($replyUid) && !newData.val().contains('.') && !newData.val().contains('$') && !newData.val().contains('[') && !newData.val().contains(']') && !newData.val().contains('#')"
+					},
+					"timestamp": {
+						".validate": "newData.val() === now && !data.exists()"
+					},
+					"$other": {
+						".validate": "false"
+					}
+				}
+			}
+		},
+
+		"reviewsSent": {
+			".read": true,				
+
+			"$username": {
+				".indexOn": "timestamp",
+					
+				"$reviewUid": {
+					".write": "root.child('users').child(auth.uid).child('username').val() === $username && ( !data.exists() || data.child('timestamp').val() + 1000*60*60 > now )",
+					".validate": "newData.hasChildren(['content', 'title', 'rating', 'sender', 'permalink', 'timestamp'])",
+
+					"content": {
+						".validate": "newData.isString() && newData.val().length >= 3"
+					},
+					"title": {
+						".validate": "newData.isString() && newData.val().length >= 3"
+					},
+					"image": {
+						".validate": "newData.isString()"
+					},
+					"video": {
+						".validate": "newData.isString()"
+					},
+					"banner": {
+						".validate": "newData.isString()"
+					},
+					"rating": {
+						".validate": "newData.val() <= 5 && newData.val() >= 0"
+					},
+					"sender": {
+						".validate": "newData.val() === $username"
+					},
+					"permalink": {
+						".validate": "(!data.exists() || newData.val() === data.val()) && newData.isString() && newData.val().endsWith($reviewUid) && !newData.val().contains('.') && !newData.val().contains('$') && !newData.val().contains('[') && !newData.val().contains(']') && !newData.val().contains('#')"
+					},
+					"timestamp": {
+						".validate": "newData.val() === now && !data.exists()"
+					},
+					"$other": {
+						".validate": "false"
+					}
+				}
+			}
+		},
+		
+		"following": {
+
+			"$username": {
+				".indexOn": "timestamp",
+				".read": true,
+				".write": "root.child('users').child(auth.uid).child('username').val() === $username",
+
+				"$followingUser": {
+					".validate": "newData.hasChildren(['timestamp', 'type', 'username'])",
+
+					"timestamp": {
+						".validate": "newData.val() === now"
+					},
+					"type": {
+						".validate": "newData.isString()"
+					},
+					"username": {
+						".validate": "newData.isString()"
+					},
+
+				}
+			}
+		},
+		
+		/* everything below this point is read only and should be updated using cloud functions */
+		"userAliases": {
+			".read": true,
+			".indexOn": ["followerCount", "reviewCount", "averageRating"]
+		},
+
+		"userReviews": {
+			".read": true,
+			"$name": {
+				".indexOn": ["timestamp", "rating", "replyCount"]
+			}
+		},
+
+		"books": {
+			".read": true,
+			".indexOn": ["followerCount", "reviewCount", "averageRating"]
+		},
+
+		"bookReviews": {
+			".read": true,
+			"$name": {
+				".indexOn": ["timestamp", "rating", "replyCount"]
+			}
+		},
+
+		"amazon": {
+			".read": true,
+			".indexOn": ["followerCount", "reviewCount", "averageRating"]
+		},
+
+		"amazonReviews": {
+			".read": true,
+			"$name": {
+				".indexOn": ["timestamp", "rating", "replyCount"]
+			}
+		},
+
+		"icos": {
+			".read": true,
+			".indexOn": ["followerCount", "reviewCount", "averageRating"]
+		},
+
+		"icoReviews": {
+			".read": true,
+			"$name": {
+				".indexOn": ["timestamp", "rating", "replyCount"]
+			}
+		},
+
+		"movies": {
+			".read": true,
+			".indexOn": ["followerCount", "reviewCount", "averageRating"]
+		},
+
+		"movieReviews": {
+			".read": true,
+			"$name": {
+				".indexOn": ["timestamp", "rating", "replyCount"]
+			}
+		},
+
+		"urls": {
+			".read": true,
+			".indexOn": ["followerCount", "reviewCount", "averageRating"]
+		},
+
+		"urlReviews": {
+			".read": true,
+			"$name": {
+				".indexOn": ["timestamp", "rating", "replyCount"]
+			}
+		},
+
+		"repliesReceived": {
+			"$username": {
+				".indexOn": "timestamp",
+				".read": true
+			}
+		},
+			
+		"notifications": {
+			"$username": {
+				".indexOn": "timestamp",
+				".read": true
+			}
+		},
+			
+		"followers": {
+			"$username": {
+				".indexOn": "timestamp",
+				".read": true
+			}
+		},
+		
+	}
+}

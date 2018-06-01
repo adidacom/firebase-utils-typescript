@@ -1,0 +1,26 @@
+<html>
+<head>
+<script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyBS7_HQSqI3ldA1nYr9680JhtE-5wBxllw",
+    authDomain: "rozet-486af.firebaseapp.com",
+    databaseURL: "https://rozet-486af.firebaseio.com",
+    projectId: "rozet-486af",
+    storageBucket: "rozet-486af.appspot.com",
+    messagingSenderId: "376253458864"
+  };
+  firebase.initializeApp(config);
+</script>
+</head>
+<body>
+
+use this query in the browser to test authentication
+
+<br><br>
+
+firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+
+</body>
+</html>
